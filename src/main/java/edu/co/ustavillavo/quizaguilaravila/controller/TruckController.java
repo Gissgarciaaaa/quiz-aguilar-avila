@@ -1,11 +1,12 @@
-package com.quiz.controller;
+package edu.co.ustavillavo.quizaguilaravila.controller;
 
-import com.quiz.dto.TruckRequest;
-import com.quiz.model.AppUser;
-import com.quiz.model.Role;
-import com.quiz.model.Truck;
-import com.quiz.repository.AppUserRepository;
-import com.quiz.repository.TruckRepository;
+import edu.co.ustavillavo.quizaguilaravila.dto.TruckRequest;
+import edu.co.ustavillavo.quizaguilaravila.model.AppUser;
+import edu.co.ustavillavo.quizaguilaravila.model.Role;
+import edu.co.ustavillavo.quizaguilaravila.model.Truck;
+import edu.co.ustavillavo.quizaguilaravila.repository.AppUserRepository;
+import edu.co.ustavillavo.quizaguilaravila.repository.TruckRepository;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,8 +37,19 @@ public class TruckController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/plate/{plate}")
+    public ResponseEntity<Truck> getByPlate(@PathVariable String plate) {
+        return truckRepository.findByPlate(plate)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody TruckRequest request) {
+    public ResponseEntity<?> create(@Valid @RequestBody TruckRequest request) {
+        if (truckRepository.findByPlate(request.plate()).isPresent()) {
+            return ResponseEntity.badRequest().body("Ya existe un camión con esa placa");
+        }
+
         AppUser driver = userRepository.findById(request.driverId())
                 .orElseThrow(() -> new RuntimeException("Driver no encontrado"));
 
@@ -56,23 +68,30 @@ public class TruckController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody TruckRequest request) {
-        return truckRepository.findById(id).map(truck -> {
-            AppUser driver = userRepository.findById(request.driverId())
-                    .orElseThrow(() -> new RuntimeException("Driver no encontrado"));
+    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody TruckRequest request) {
+        return truckRepository.findById(id)
+                .map(truck -> {
+                    AppUser driver = userRepository.findById(request.driverId())
+                            .orElseThrow(() -> new RuntimeException("Driver no encontrado"));
 
-            if (driver.getRole() != Role.DRIVER) {
-                return ResponseEntity.badRequest().body("El usuario asignado no tiene rol DRIVER");
-            }
+                    if (driver.getRole() != Role.DRIVER) {
+                        return ResponseEntity.badRequest().body("El usuario asignado no tiene rol DRIVER");
+                    }
 
-            truck.setBrand(request.brand());
-            truck.setCapacity(request.capacity());
-            truck.setColor(request.color());
-            truck.setPlate(request.plate());
-            truck.setDriver(driver);
+                    if (!truck.getPlate().equals(request.plate())
+                            && truckRepository.findByPlate(request.plate()).isPresent()) {
+                        return ResponseEntity.badRequest().body("Ya existe otro camión con esa placa");
+                    }
 
-            return ResponseEntity.ok(truckRepository.save(truck));
-        }).orElse(ResponseEntity.notFound().build());
+                    truck.setBrand(request.brand());
+                    truck.setCapacity(request.capacity());
+                    truck.setColor(request.color());
+                    truck.setPlate(request.plate());
+                    truck.setDriver(driver);
+
+                    return ResponseEntity.ok(truckRepository.save(truck));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")

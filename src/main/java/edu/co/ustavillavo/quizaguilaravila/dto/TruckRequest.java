@@ -1,5 +1,4 @@
-package com.quiz.dto;
-
+package edu.co.ustavillavo.quizaguilaravila.dto;
 public record TruckRequest(
         String brand,
         Integer capacity,
