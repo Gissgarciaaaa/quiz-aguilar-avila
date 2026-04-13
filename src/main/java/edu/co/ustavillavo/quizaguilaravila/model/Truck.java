@@ -1,4 +1,4 @@
-package com.quiz.model;
+package edu.co.ustavillavo.quizaguilaravila.model;
 
 import jakarta.persistence.*;
 
