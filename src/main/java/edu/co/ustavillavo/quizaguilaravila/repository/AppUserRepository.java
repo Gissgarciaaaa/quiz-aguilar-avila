@@ -1,6 +1,6 @@
-package com.quiz.repository;
+package edu.co.ustavillavo.quizaguilaravila.repository;
 
-import com.quiz.model.AppUser;
+import edu.co.ustavillavo.quizaguilaravila.model.AppUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
